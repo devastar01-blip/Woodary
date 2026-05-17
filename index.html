@@ -190,7 +190,128 @@ button:active{transform:scale(.97)}
 /* ═══ SCROLLABLE ═══ */
 .scroll-y{overflow-y:auto;max-height:80vh}
 
-@media(max-width:720px){.grid-4{grid-template-columns:1fr 1fr}.grid-3{grid-template-columns:1fr 1fr}.hdr-user-extra{display:none}}
+/* ═══ RESPONSIVE GRID CLASSES ═══ */
+.resp-2col{display:grid;grid-template-columns:2fr 1fr;gap:14px}
+.resp-3col{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.resp-pdf-grid{display:grid;grid-template-columns:300px 1fr;gap:18px;align-items:flex-start}
+.form-grid{display:grid;gap:12px}
+
+@media(max-width:900px){
+  .resp-pdf-grid{grid-template-columns:1fr}
+  .resp-2col{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+  .resp-2col{grid-template-columns:1fr!important}
+  .resp-3col{grid-template-columns:1fr!important}
+  .resp-pdf-grid{grid-template-columns:1fr!important}
+  .form-grid{grid-template-columns:1fr!important}
+  .sum-grid{grid-template-columns:1fr 1fr!important}
+}
+
+/* ═══ RESPONSIVE — MOBILE FIRST ═══ */
+
+/* ── 1. Tablet ≤ 900px ── */
+@media(max-width:900px){
+  .grid-4{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:1fr 1fr}
+  .hdr-user-extra{display:none}
+  #main{padding:18px 14px}
+  .hdr-inner{padding:0 14px}
+}
+
+/* ── 2. Mobile ≤ 600px ── */
+@media(max-width:600px){
+  /* Grid collapse */
+  .grid-4,.grid-3,.grid-2{grid-template-columns:1fr!important;gap:10px}
+
+  /* Header */
+  .hdr-inner{height:54px;padding:0 12px}
+  .brand-name{font-size:17px}
+  .beta-badge{font-size:8px;padding:1px 5px}
+
+  /* Desktop nav hidden — replaced by bottom tab bar */
+  #hdr-nav{display:none!important}
+  #hdr-user-actions .theme-btn{width:28px;height:28px;font-size:14px}
+
+  /* Main */
+  #main{padding:12px 10px;padding-bottom:80px}
+
+  /* Cards */
+  .card{padding:14px}
+  .kpi{padding:12px 14px}
+
+  /* Mat table — simpler on mobile */
+  .mat-th{display:none}
+  .mat-row{grid-template-columns:1fr 1fr!important;gap:6px;padding:10px}
+  .mat-row>*:nth-child(1){grid-column:1/-1;font-size:12px}
+
+  /* Budget card */
+  .bcard:hover{transform:none}
+
+  /* Charts */
+  .cbar-label{width:70px;font-size:10px}
+  .cbar-val{width:64px;font-size:10px}
+  .mchart{height:110px}
+  .mbar-group{height:80px}
+  .mbar{width:14px}
+
+  /* Feat cards on landing */
+  .feat-card{padding:16px}
+
+  /* PDF preview stack */
+  .pdf-prev{border-radius:10px}
+
+  /* Buttons smaller */
+  .btn{padding:8px 14px;font-size:12px}
+
+  /* Landing hero */
+  .landing-hero{padding:40px 16px 32px!important}
+  .landing-hero h1{font-size:28px!important;letter-spacing:-1px!important}
+  .landing-hero p{font-size:14px!important}
+  .landing-cta-btns{flex-direction:column!important;align-items:stretch!important}
+  .landing-cta-btns button{width:100%!important}
+
+  /* Login */
+  .login-box{max-width:100%!important;padding:0 4px}
+  .login-box .card{padding:20px 16px!important}
+
+  /* Settings modal mat row */
+  .settings-row{grid-template-columns:1fr 1fr 36px!important}
+}
+
+/* ── 3. Small mobile ≤ 380px ── */
+@media(max-width:380px){
+  #main{padding:10px 8px;padding-bottom:80px}
+  .card{padding:12px}
+  .brand-name{font-size:15px}
+  .cbar-label{width:58px}
+}
+
+/* ── Bottom Tab Bar (mobile only) ── */
+#bottom-nav{
+  display:none;
+  position:fixed;bottom:0;left:0;right:0;z-index:60;
+  background:rgba(6,6,8,0.97);backdrop-filter:blur(20px);
+  border-top:1px solid rgba(255,255,255,0.08);
+  height:62px;padding:0;
+  display:none; /* hidden by default, shown via JS on mobile */
+}
+#bottom-nav .bnav-inner{
+  display:flex;align-items:stretch;height:100%;
+}
+#bottom-nav .bnav-btn{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;cursor:pointer;border:none;background:transparent;
+  color:var(--text-muted);font-size:9px;font-weight:700;
+  text-transform:uppercase;letter-spacing:0.4px;padding:0;
+  transition:color .2s;
+}
+#bottom-nav .bnav-btn.active{color:var(--text)}
+#bottom-nav .bnav-btn .bnav-icon{font-size:20px;line-height:1}
+@media(max-width:600px){
+  #bottom-nav{display:block}
+}
+
 </style>
 <!-- ═══ SUPABASE SDK ═══ -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -521,7 +642,7 @@ function buildLanding(){
 
   /* hero */
   const hero=div("");
-  hero.style.cssText="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:80px 20px 60px";
+  hero.className="landing-hero";hero.style.cssText="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:80px 20px 60px";
   hero.innerHTML=`
     <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:5px 14px;font-size:12px;color:var(--text-sub);margin-bottom:28px;backdrop-filter:blur(8px)">
       🪵 Plataforma completa para marceneiros
@@ -533,7 +654,7 @@ function buildLanding(){
     <p style="font-size:16px;color:var(--text-sub);max-width:540px;line-height:1.7;margin-bottom:36px">
       Do orçamento à entrega: calcule materiais, gerencie projetos, acompanhe resultados e envie propostas profissionais em PDF com poucos cliques.
     </p>
-    <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-bottom:16px">
+    <div class="landing-cta-btns" style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-bottom:16px">
       <button class="btn btn-dark" onclick="setState({page:'login'})" style="padding:14px 32px;font-size:15px;border-radius:12px">Começar Gratuitamente →</button>
       <button class="btn btn-outline" onclick="scrollToFeatures()" style="padding:14px 28px;font-size:15px;border-radius:12px">Ver funcionalidades</button>
     </div>
@@ -558,7 +679,7 @@ function buildLanding(){
     {icon:"🔄",title:"Acompanhamento de Status",desc:"Gerencie o ciclo completo de cada projeto: Pendente, Aprovado, Em Andamento, Concluído ou Cancelado. Filtre e busque orçamentos por cliente, nome de projeto ou status."},
     
   ];
-  const fgrid=div("grid-3"); fgrid.style.gap="16px";
+  const fgrid=div("resp-3col"); fgrid.style.gap="16px";
   feats.forEach(f=>{
     const fc=div("feat-card");
     fc.innerHTML=`<div style="font-size:32px;margin-bottom:14px">${f.icon}</div><h3 style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:10px">${f.title}</h3><p style="font-size:13px;color:var(--text-sub);line-height:1.7">${f.desc}</p>`;
@@ -569,7 +690,7 @@ function buildLanding(){
   /* stats strip */
   const strip=div("");
   strip.style.cssText="background:rgba(255,255,255,.03);border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin:0 0 60px";
-  const stripInner=div("");stripInner.style.cssText="max-width:1100px;margin:0 auto;padding:32px 20px;display:grid;grid-template-columns:repeat(4,1fr);gap:20px;text-align:center";
+  const stripInner=div("");stripInner.style.cssText="max-width:1100px;margin:0 auto;padding:32px 20px;display:grid;grid-template-columns:repeat(2,1fr);gap:20px;text-align:center";
   [{v:"✓",l:"Orçamentos ilimitados"},{v:"6",l:"Templates de PDF"},{v:"5",l:"Tipos de material"},{v:"100%",l:"Seus dados, seu controle"}].forEach(({v,l})=>{
     const d=div("");d.innerHTML=`<div style="font-size:28px;font-weight:900;color:var(--text);margin-bottom:6px">${v}</div><div style="font-size:12px;color:var(--text-sub)">${l}</div>`;stripInner.appendChild(d);
   });
@@ -606,7 +727,7 @@ function buildLogin(){
   const wrap=div("fade");
   wrap.style.cssText="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px";
 
-  const box=div("");box.style.cssText="width:100%;max-width:420px";
+  const box=div("");box.className="login-box";box.style.cssText="width:100%;max-width:420px";
 
   /* back to landing */
   const back=btn("← Voltar","btn-ghost",()=>setState({page:"landing"}),{marginBottom:"16px",borderRadius:"8px",padding:"6px 12px",fontSize:"13px"});
@@ -782,10 +903,10 @@ function buildBForm(initial){
     F[key]=i;d.appendChild(i);return d;
   };
   c1.appendChild(div("sec-title","📋 INFORMAÇÕES DO PROJETO"));
-  const g1=div("grid-2");g1.style.marginBottom="14px";
+  const g1=div("grid-2 form-grid");g1.style.marginBottom="14px";
   [["Nome do Projeto","name","text","Ex: Cozinha Planejada"],["Cliente","client","text","Nome do cliente"],["Telefone","clientPhone","text","(xx) xxxxx-xxxx"],["E-mail","clientEmail","email","email@cliente.com"],["Data Orçamento","date","date",""],["Previsão de Entrega","deliveryDate","date",""]].forEach(([l2,k,t,ph])=>{const f=field(l2,k,t,ph||"");if(k==="date"&&!isE)F[k].value=new Date().toISOString().slice(0,10);g1.appendChild(f);});
   c1.appendChild(g1);
-  const g2=div("grid-3");g2.style.marginBottom="14px";
+  const g2=div("grid-3 form-grid");g2.style.marginBottom="14px";
   const stD=div("");stD.appendChild(lbl("Status"));
   const stSel=el("select","");Object.entries(ST).forEach(([k,v])=>{const o=el("option","",v.label);o.value=k;if((isE?initial.status:"pending")===k)o.selected=true;stSel.appendChild(o);});F.status=stSel;stD.appendChild(stSel);g2.appendChild(stD);
   const marginD=div("");marginD.appendChild(lbl("Margem de Lucro (%)"));
@@ -851,7 +972,7 @@ function buildBForm(initial){
   const nota=el("textarea","");nota.style.cssText="min-height:60px;resize:vertical";nota.placeholder="Detalhes, especificações...";nota.value=isE?initial.notes:"";F.notes=nota;nl.appendChild(nota);c1.appendChild(nl);
   wrap.appendChild(c1);
   const sum=div("card");sum.style.cssText="padding:16px;margin-bottom:12px";
-  const sg=div("grid-4");
+  const sg=div("grid-4 sum-grid");
   const svColors=["var(--text-sub)","#b45309","#7c3aed","var(--text)"];
   const svLabels=["Materiais + Extras","Execução (dific.)","Custo Total","VALOR FINAL"];
   const svEls=[];
@@ -913,7 +1034,7 @@ function buildBDetail(b){
   tr.appendChild(btn("📄 PDF","btn-outline",()=>setState({tab:"pdf",pdfBid:b.id,view:"list"}),{borderRadius:"10px",padding:"7px 14px"}));
   tr.appendChild(btn("🗑️","btn-danger",()=>{if(!confirm("Excluir este orçamento?"))return;const u=STATE.cur;const delId=b.id;u.budgets=u.budgets.filter(x=>x.id!==delId);if(SUPA_READY&&u.uid)sbDeleteBudget(u.uid,delId).catch(e=>console.error("sbDeleteBudget:",e));syncUser(u,false);setState({view:"list",selBudget:null});},{borderRadius:"10px",padding:"7px 14px"}));
   wrap.appendChild(tr);
-  const g=div("");g.style.cssText="display:grid;grid-template-columns:2fr 1fr;gap:16px";
+  const g=div("resp-2col");g.style.cssText="gap:16px";
   const left=div("");
   const c1=div("card");c1.style.marginBottom="14px";
   c1.appendChild(div("sec-title","👤 CLIENTE & PROJETO"));
@@ -1015,7 +1136,7 @@ function buildGTab(){
     opList.innerHTML="";
     if(!opCosts.length){const empty=div("");empty.style.cssText="text-align:center;padding:16px;color:var(--text-muted);font-size:13px";empty.textContent="Nenhum custo operacional cadastrado. Clique em '+ Adicionar'.";opList.appendChild(empty);}
     opCosts.forEach((e,i)=>{
-      const row=div("");row.style.cssText="display:grid;grid-template-columns:2fr 1fr auto auto;gap:8px;align-items:center;margin-bottom:7px";
+      const row=div("");row.style.cssText="display:grid;grid-template-columns:2fr 1fr auto auto;gap:8px;align-items:center;margin-bottom:7px;min-width:0";
       const ni=el("input","");ni.placeholder="Ex: Aluguel, Energia, Internet";ni.value=e.name;ni.style.padding="7px 10px";ni.addEventListener("input",()=>{opCosts[i].name=ni.value;syncUser(u,false);renderOpSummary();});
       const vi=el("input","");vi.type="number";vi.min="0";vi.value=e.value;vi.placeholder="R$ 0";vi.style.padding="7px 10px";vi.addEventListener("input",()=>{opCosts[i].value=+vi.value||0;syncUser(u,false);renderOpSummary();});
       const recSel=el("select","");recSel.style.padding="7px 8px";[{v:"true",l:"Fixo"},{v:"false",l:"Variável"}].forEach(({v,l})=>{const o=el("option","",l);o.value=v;if(String(e.recurrent)===v)o.selected=true;recSel.appendChild(o);});recSel.addEventListener("change",()=>{opCosts[i].recurrent=recSel.value==="true";syncUser(u,false);});
@@ -1046,7 +1167,7 @@ function buildGTab(){
   const mmap={};
   budgets.forEach(b=>{const d=new Date(b.date+"T12:00");const key=`${String(d.getMonth()+1).padStart(2,"0")}/${String(d.getFullYear()).slice(-2)}`;if(!mmap[key])mmap[key]={name:key,receita:0,lucro:0};const c=calcB(b);if(b.status==="completed"){mmap[key].receita+=c.sale;mmap[key].lucro+=c.profit;}});
   const monthly=Object.values(mmap).sort((a,b2)=>a.name.localeCompare(b2.name)).slice(-6);
-  const r1=div("");r1.style.cssText="display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px";
+  const r1=div("resp-2col");r1.style.cssText="margin-bottom:14px";
   const mc2=div("card");mc2.appendChild(div("sec-title","📊 RECEITA & LUCRO MENSAL"));mc2.appendChild(buildMonthChart(monthly));
   const lg=div("");lg.style.cssText="display:flex;gap:12px;margin-top:6px;font-size:11px;color:var(--text-muted)";lg.innerHTML=`<div style="display:flex;align-items:center;gap:4px"><div style="width:12px;height:12px;border-radius:2px;background:#555"></div>Receita</div><div style="display:flex;align-items:center;gap:4px"><div style="width:12px;height:12px;border-radius:2px;background:#888"></div>Lucro</div>`;
   mc2.appendChild(lg);r1.appendChild(mc2);
@@ -1057,7 +1178,7 @@ function buildGTab(){
   const mt={};const mcc={};Object.keys(MAT).forEach(k=>{mt[k]=0;mcc[k]=0;});
   budgets.forEach(b=>Object.keys(MAT).forEach(k=>{mt[k]+=(b.materials[k]?.quantity||0);mcc[k]+=(b.materials[k]?.quantity||0)*(b.materials[k]?.unitPrice||0);}));
   const matChart=Object.entries(MAT).map(([k,{label}])=>({name:label.replace("Chapas de ","").replace(" PVA","").replace(" de Bordo",""),qtd:mt[k],custo:Math.round(mcc[k])}));
-  const r2=div("");r2.style.cssText="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px";
+  const r2=div("resp-2col");r2.style.cssText="margin-bottom:14px";
   const bc1=div("card");bc1.appendChild(div("sec-title","🪵 MATERIAIS UTILIZADOS"));bc1.appendChild(buildBarChart(matChart,"qtd",["#555","#666","#444","#777","#888"],null));r2.appendChild(bc1);
   const bc2=div("card");bc2.appendChild(div("sec-title","💰 CUSTO POR MATERIAL"));bc2.appendChild(buildBarChart(matChart,"custo",["#666","#555","#777","#444","#888"],fmt));r2.appendChild(bc2);wrap.appendChild(r2);
   const cur=div("card");cur.appendChild(div("sec-title","🔍 CURIOSIDADES & DADOS"));
@@ -1076,7 +1197,7 @@ function buildPTab(){
   const wrap=div("fade");
   wrap.innerHTML=`<div style="margin-bottom:20px"><h1 style="margin:0;font-size:22px;font-weight:800;color:var(--text)">📄 Proposta de Serviço</h1><p style="margin:3px 0 0;color:var(--text-muted);font-size:12px">Monte a proposta final para apresentar ao seu cliente</p></div>`;
 
-  const g=div("");g.style.cssText="display:grid;grid-template-columns:320px 1fr;gap:18px;align-items:flex-start";
+  const g=div("resp-pdf-grid");g.style.cssText="";
   const left=div("");
   const prevWrap=div("");
 
@@ -1354,25 +1475,40 @@ function buildFooter(){
 function buildHeader(){
   const hdr=el("header","");hdr.id="hdr";
   const inner=div("hdr-inner");
-  const brand=div("");brand.style.cssText="display:flex;align-items:center;gap:10px;cursor:pointer";
-  brand.appendChild(buildLogo());
+  const brand=div("");brand.style.cssText="display:flex;align-items:center;gap:10px;cursor:pointer;flex-shrink:0";
+  brand.appendChild(buildLogo(34));
   const bn=div("");bn.innerHTML=`<div><span class="brand-name">Woodary</span><span class="beta-badge">BETA</span></div><div style="font-size:9px;color:var(--text-muted)">Orçamentos inteligentes pra marcenaria</div>`;
   brand.appendChild(bn);inner.appendChild(brand);
-  const nav=div("");nav.style.cssText="display:flex;gap:3px";
-  [{k:"budgets",l:"📋 Orçamentos"},{k:"gestao",l:"📊 Gestão"},{k:"pdf",l:"📄 Proposta de Serviço"}].forEach(({k,l:ll})=>{const b=el("button","nav-btn"+(STATE.tab===k?" active":""),ll);b.addEventListener("click",()=>setState({tab:k,view:"list"}));nav.appendChild(b);});
+  /* desktop nav — hidden on mobile via CSS */
+  const nav=div("");nav.id="hdr-nav";nav.style.cssText="display:flex;gap:3px";
+  [{k:"budgets",l:"📋 Orçamentos"},{k:"gestao",l:"📊 Gestão"},{k:"pdf",l:"📄 Proposta"}].forEach(({k,l:ll})=>{
+    const b=el("button","nav-btn"+(STATE.tab===k?" active":""),ll);
+    b.addEventListener("click",()=>setState({tab:k,view:"list"}));nav.appendChild(b);
+  });
   inner.appendChild(nav);
   const u=STATE.cur;
-  const ui=div("");ui.style.cssText="display:flex;align-items:center;gap:9px";
+  const ui=div("");ui.id="hdr-user-actions";ui.style.cssText="display:flex;align-items:center;gap:8px;flex-shrink:0";
   const ut=div("hdr-user-extra");ut.style.cssText="text-align:right";
-  ut.innerHTML=`<div style="font-size:12px;font-weight:700;color:var(--text)">${u.name}</div><div style="font-size:10px;color:${u.plan==="pro"?"#b45309":"var(--text-muted)"}">${"Versão Beta"}</div>`;
+  ut.innerHTML=`<div style="font-size:12px;font-weight:700;color:var(--text)">${u.name||"Usuário"}</div><div style="font-size:10px;color:var(--text-muted)">Versão Beta</div>`;
   ui.appendChild(ut);
-  ui.appendChild(btn("⚙️ Preços","btn-outline",()=>setState({showSettings:true}),{padding:"5px 11px",fontSize:"11px",borderRadius:"8px"}));
+  ui.appendChild(btn("⚙️","btn-outline",()=>setState({showSettings:true}),{padding:"5px 9px",fontSize:"14px",borderRadius:"8px",title:"Preços"}));
   ui.appendChild(themeBtn());
   ui.appendChild(btn("Sair","btn-ghost",async()=>{
     if(SUPA_READY)try{await supabase.auth.signOut();}catch(e){}
     setState({cur:null,page:"landing",view:"list",filterStatus:"all",filterQ:""});
-  },{padding:"5px 11px",fontSize:"11px",borderRadius:"8px"}));
+  },{padding:"5px 10px",fontSize:"11px",borderRadius:"8px"}));
   inner.appendChild(ui);hdr.appendChild(inner);return hdr;
+}
+function buildBottomNav(){
+  const bar=el("nav","");bar.id="bottom-nav";
+  const inner=div("bnav-inner");
+  [{k:"budgets",icon:"📋",l:"Orçamentos"},{k:"gestao",icon:"📊",l:"Gestão"},{k:"pdf",icon:"📄",l:"Proposta"}].forEach(({k,icon,l:ll})=>{
+    const b=el("button","bnav-btn"+(STATE.tab===k?" active":""),"");
+    b.innerHTML=`<span class="bnav-icon">${icon}</span>${ll}`;
+    b.addEventListener("click",()=>setState({tab:k,view:"list"}));
+    inner.appendChild(b);
+  });
+  bar.appendChild(inner);return bar;
 }
 
 /* ════════════════════════════════════════════
@@ -1390,6 +1526,7 @@ function buildApp(){
   else if(STATE.tab==="gestao")main.appendChild(buildGTab());
   else if(STATE.tab==="pdf")main.appendChild(buildPTab());
   wrap.appendChild(main);
+  wrap.appendChild(buildBottomNav());
   wrap.appendChild(buildFooter());
   return wrap;
 }
