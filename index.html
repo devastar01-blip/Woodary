@@ -326,27 +326,44 @@ try{
 ════════════════════════════════════════════ */
 async function sbLoadUser(uid){
   try{
-    const{data:profile}=await supabase.from("users").select("*").eq("id",uid).single();
-    if(!profile)return null;
+    /* timeout de 8 segundos para não travar */
+    const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error("timeout")),8000));
+    const query=supabase.from("users").select("*").eq("id",uid).single();
+    const{data:profile,error}=await Promise.race([query,timeout]);
+    if(error||!profile){
+      /* perfil não existe ainda — tenta criar */
+      const{data:{user}}=await supabase.auth.getUser();
+      if(user){return await sbCreateUser(uid,user.email.split("@")[0],user.email);}
+      return null;
+    }
     const{data:budgets}=await supabase.from("budgets").select("*").eq("user_id",uid).order("created_at",{ascending:false});
     const parsed=(budgets||[]).map(b=>({
       ...b,
       id:b.budget_key||b.id,
-      extras:      typeof b.extras==="string"      ?JSON.parse(b.extras||"[]")      :(b.extras||[]),
-      customMaterials:typeof b.custom_materials==="string"?JSON.parse(b.custom_materials||"[]"):(b.custom_materials||null),
-      materials:   typeof b.materials==="string"   ?JSON.parse(b.materials||"{}")   :(b.materials||{}),
+      extras:           tryParse(b.extras,       []),
+      customMaterials:  tryParse(b.custom_materials, null),
+      materials:        tryParse(b.materials,    {}),
     }));
     return{
       ...profile,
-      pricePresets:   typeof profile.price_presets==="string"   ?JSON.parse(profile.price_presets||"[]")    :(profile.price_presets||DEFAULT_PRESETS),
-      operationalCosts:typeof profile.operational_costs==="string"?JSON.parse(profile.operational_costs||"[]"):(profile.operational_costs||[]),
-      companyName: profile.company_name||"",
-      companyLogo: profile.company_logo||"",
-      customBgImg: profile.custom_bg_img||"",
+      pricePresets:      tryParse(profile.price_presets,      DEFAULT_PRESETS),
+      operationalCosts:  tryParse(profile.operational_costs,  []),
+      companyName:  profile.company_name||"",
+      companyLogo:  profile.company_logo||"",
+      customBgImg:  profile.custom_bg_img||"",
       totalBudgetsCreated:profile.total_budgets_created||0,
       budgets:parsed,
     };
-  }catch(e){console.error("sbLoadUser:",e);return null;}
+  }catch(e){
+    console.error("sbLoadUser:",e.message);
+    return null;
+  }
+}
+/* helper para parsear JSON sem explodir */
+function tryParse(val,fallback){
+  if(!val)return fallback;
+  if(typeof val==="object")return val;
+  try{return JSON.parse(val);}catch{return fallback;}
 }
 async function sbCreateUser(uid,name,email){
   const row={id:uid,name,email,plan:"free",total_budgets_created:0,price_presets:JSON.stringify(DEFAULT_PRESETS),company_name:"",company_logo:"",custom_bg_img:"",operational_costs:"[]"};
@@ -656,9 +673,9 @@ function buildLogin(){
             showErr(m);return;
           }
           const userData=await sbLoadUser(data.user.id);
-          if(!userData){showErr("Conta não encontrada. Tente cadastrar-se.");return;}
           success=true;emI.value="";paI.value="";
-          setState({cur:{...userData,uid:data.user.id},page:"app"});
+          const profile=userData||await sbCreateUser(data.user.id,data.user.email.split("@")[0],data.user.email);
+          setState({cur:{...profile,uid:data.user.id},page:"app"});
         } else {
           if(!nameI.value||!emI.value||!paI.value){showErr("Preencha todos os campos.");return;}
           if(paI.value.length<6){showErr("Senha mínima: 6 caracteres.");return;}
@@ -699,9 +716,10 @@ function buildLogin(){
         }
       }
     }catch(e2){
-      const c=e2.code||"";
-      const msg=c==="auth/user-not-found"||c==="auth/wrong-password"||c==="auth/invalid-credential"?"E-mail ou senha incorretos.":c==="auth/email-already-in-use"?"E-mail já cadastrado.":c==="auth/invalid-email"?"E-mail inválido.":c==="auth/too-many-requests"?"Muitas tentativas. Aguarde alguns minutos.":"Erro ao processar. Tente novamente.";
-      showErr(msg);
+      const m=e2.message==="timeout"?"Conexão lenta. Verifique sua internet e tente novamente.":
+        e2.message?.includes("Invalid")||e2.message?.includes("credentials")?"E-mail ou senha incorretos.":
+        e2.message||"Erro ao processar. Tente novamente.";
+      showErr(m);
     }
     /* só reativa o botão se não houve sucesso (sucesso destrói o DOM) */
     if(!success){
