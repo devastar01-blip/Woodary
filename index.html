@@ -649,7 +649,12 @@ function buildLogin(){
       if(SUPA_READY){
         if(mode==="login"){
           const{data,error}=await supabase.auth.signInWithPassword({email:emI.value,password:paI.value});
-          if(error){const m=error.message.includes("Invalid")||error.message.includes("credentials")?"E-mail ou senha incorretos.":error.message.includes("many")?"Muitas tentativas. Aguarde alguns minutos.":error.message;showErr(m);return;}
+          if(error){
+            const m=error.message.includes("Invalid")||error.message.includes("credentials")?"E-mail ou senha incorretos.":
+              error.message.includes("confirm")||error.message.includes("verified")?"E-mail não confirmado. Verifique sua caixa de entrada e clique no link de confirmação.":
+              error.message.includes("many")?"Muitas tentativas. Aguarde alguns minutos.":error.message;
+            showErr(m);return;
+          }
           const userData=await sbLoadUser(data.user.id);
           if(!userData){showErr("Conta não encontrada. Tente cadastrar-se.");return;}
           success=true;emI.value="";paI.value="";
@@ -659,6 +664,18 @@ function buildLogin(){
           if(paI.value.length<6){showErr("Senha mínima: 6 caracteres.");return;}
           const{data,error}=await supabase.auth.signUp({email:emI.value,password:paI.value});
           if(error){showErr(error.message.includes("already")?"E-mail já cadastrado.":error.message);return;}
+          if(!data.user){showErr("Verifique sua caixa de e-mail e confirme o cadastro.");return;}
+          /* Se email confirmation está ativa, user existe mas session é null */
+          if(!data.session){
+            success=true;emI.value="";paI.value="";
+            errBox.style.background="rgba(45,122,79,0.15)";errBox.style.borderColor="rgba(45,122,79,0.4)";errBox.style.color="#34d399";
+            errBox.textContent="✅ Conta criada! Verifique seu e-mail para confirmar, depois faça login.";errBox.style.display="block";
+            /* switch to login tab */
+            mode="login";
+            Object.entries(tabBtns).forEach(([kk,bb])=>{bb.style.background=kk==="login"?"rgba(200,200,200,.15)":"transparent";bb.style.color=kk==="login"?"var(--text)":"var(--text-sub)";});
+            nameRow.style.display="none";
+            return;
+          }
           const userData=await sbCreateUser(data.user.id,nameI.value,emI.value);
           success=true;emI.value="";paI.value="";
           setState({cur:{...userData,uid:data.user.id},page:"app"});
