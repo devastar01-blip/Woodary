@@ -315,6 +315,8 @@ button:active{transform:scale(.97)}
 </style>
 <!-- ═══ SUPABASE SDK ═══ -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 </head>
 <body>
 <div id="bg"></div>
@@ -1396,7 +1398,8 @@ function buildPTab(){
     tot.innerHTML=`<div style="font-size:9px;color:rgba(255,255,255,.3);margin-bottom:3px">VALOR TOTAL DA PROPOSTA</div><div style="font-size:26px;font-weight:900;color:${tmpl.accent}">${fmt(totalGeral)}</div>`;
     pvI.appendChild(tot);pv.appendChild(pvI);prevWrap.appendChild(pv);
     const ab=div("");ab.style.cssText="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px";
-    ab.appendChild(btn("📥 Baixar PDF","btn-primary",()=>genProposal(selBudgets,tmpl,u),{padding:"12px 6px",fontSize:"13px",borderRadius:"10px",justifyContent:"center"}));
+    const pdfBtn=btn("📥 Baixar PDF","btn-primary",()=>genProposal(selBudgets,tmpl,u,pdfBtn),{padding:"12px 6px",fontSize:"13px",borderRadius:"10px",justifyContent:"center"});
+    ab.appendChild(pdfBtn);
     ab.appendChild(btn("💬 WhatsApp","btn-green",()=>shareProposalWA(selBudgets,tmpl,u),{padding:"12px 6px",fontSize:"13px",borderRadius:"10px",justifyContent:"center"}));
     ab.appendChild(btn("📧 E-mail","btn-outline",()=>{
       const total=selBudgets.reduce((s,b)=>s+calcB(b).sale,0);
@@ -1411,13 +1414,13 @@ function buildPTab(){
   g.appendChild(left);g.appendChild(prevWrap);wrap.appendChild(g);return wrap;
 }
 
-function genProposal(selBudgets,tmplIn,u){
+function genProposal(selBudgets,tmplIn,u,triggerBtn){
   const sh=STATE.pdfShow;
   const isCusBg=STATE.pdfTpl==="custom"&&u.customBgImg;
   const tmpl=isCusBg?{img:u.customBgImg,accent:"#d4af70",overlay:"rgba(10,8,4,0.88)"}:(tmplIn||PDF_TPLS[0]);
   const totalGeral=selBudgets.reduce((s,b)=>s+calcB(b).sale,0);
   const cl=selBudgets[0]?.client||"";
-  const logoHtml=u.companyLogo?`<img src="${u.companyLogo}" style="height:40px;border-radius:6px;margin-bottom:6px;display:block">`:"";
+  const logoHtml=u.companyLogo?`<img src="${u.companyLogo}" crossorigin="anonymous" style="height:40px;border-radius:6px;margin-bottom:6px;display:block">`:"";
   const envSections=selBudgets.map(b=>{
     const c=calcB(b);
     const mats=b.customMaterials||[];
@@ -1431,36 +1434,102 @@ function genProposal(selBudgets,tmplIn,u){
     const notesHtml=sh.notes&&b.notes?`<div style="font-size:11px;color:#94a3b8;margin-top:6px;line-height:1.6;font-style:italic">${b.notes}</div>`:"";
     return `<div class="env-sec"><div class="env-title">🏠 ${b.name}</div>${serviceDescHtml}${matRows}${exRows}${execRow}${delivRow}${costRow}${marginRow}${notesHtml}<div class="env-sub"><span>Subtotal do Ambiente</span><span style="color:${tmpl.accent}">${fmt(c.sale)}</span></div></div>`;
   }).join("");
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Proposta — ${u.companyName||"Marcenaria"}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',sans-serif;min-height:100vh;padding:50px 32px;background:#0a0804;background-image:url('${tmpl.img}');background-size:cover;background-position:center}body::before{content:'';position:fixed;inset:0;background:${tmpl.overlay};z-index:0;pointer-events:none}.w{max-width:740px;margin:0 auto;position:relative;z-index:1;color:#e2e8f0}.hd{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:18px;border-bottom:1px solid ${tmpl.accent}40;margin-bottom:24px}.company-name{font-size:26px;font-weight:900;color:${tmpl.accent}}.prop-label{font-size:10px;color:rgba(255,255,255,.3);text-align:right;margin-bottom:3px;text-transform:uppercase;letter-spacing:1px}.prop-date{font-size:11px;color:rgba(255,255,255,.25);text-align:right}.client-label{font-size:11px;color:rgba(255,255,255,.4);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}.client-name{font-size:20px;font-weight:800;color:#f1f5f9;margin-bottom:22px}.env-sec{background:rgba(0,0,0,.3);backdrop-filter:blur(4px);border-radius:12px;padding:18px;margin-bottom:14px;border:1px solid ${tmpl.accent}14}.env-title{font-size:14px;font-weight:800;color:${tmpl.accent};margin-bottom:12px}.row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px}.rl{color:#94a3b8}.rv{color:${tmpl.accent};font-weight:700}.ex{color:#c8a45e}.env-sub{display:flex;justify-content:space-between;margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,.1);font-size:13px;font-weight:700;color:rgba(255,255,255,.7)}
-.service-desc{background:${tmpl.accent}0d;border-left:2px solid ${tmpl.accent}66;border-radius:0 8px 8px 0;padding:10px 14px;margin-bottom:14px}
-.service-desc-title{font-size:9px;text-transform:uppercase;color:${tmpl.accent};letter-spacing:.8px;font-weight:700;margin-bottom:5px}
-.service-desc-body{font-size:12px;color:rgba(255,255,255,.55);line-height:1.7}.tt{background:${tmpl.accent}12;border:1px solid ${tmpl.accent}28;border-radius:14px;padding:24px;text-align:center;margin-top:8px}.tl{font-size:10px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}.tv{font-size:38px;font-weight:900;color:${tmpl.accent}}.st{border:3px solid rgba(200,200,200,.5);border-radius:50%;width:80px;height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:22px auto 0;color:rgba(200,200,200,.6);font-size:9px;font-weight:800;text-transform:uppercase;text-align:center;transform:rotate(-12deg)}.ft{text-align:center;margin-top:28px;font-size:10px;color:#334155}
-@media print{
-  html,body{background:#0a0804 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;color-adjust:exact}
-  @page{margin:0;size:A4}
-}
-</style></head><body><div class="w"><div class="hd"><div>${logoHtml}<div class="company-name">${u.companyName||"Proposta de Serviço"}</div></div><div><div class="prop-label">Proposta de Serviço</div><div class="prop-date">${new Date().toLocaleDateString("pt-BR")}</div></div></div><div class="client-label">Apresentada a</div><div class="client-name">${cl}</div>${envSections}<div class="tt"><div class="tl">Valor Total da Proposta</div><div class="tv">${fmt(totalGeral)}</div></div>${sh.stamp?`<div class="st">✓<br>APROVADO</div>`:""}<div class="ft">Proposta válida por 30 dias · ${u.companyName||""}</div></div>
-<script>
-  window.addEventListener('load',function(){
-    setTimeout(function(){
-      window.focus();
-      window.print();
-    },350);
-  });
-<\/script>
-</body></html>`;
-  /* Gera o PDF de verdade abrindo a proposta numa janela de impressão do navegador.
-     Ali o usuário escolhe "Salvar como PDF" no destino da impressão. Isso evita
-     depender de bibliotecas externas (jsPDF/html2canvas) que podem falhar com
-     imagens de fundo hospedadas fora do domínio (CORS). */
-  const printWin=window.open("","_blank");
-  if(!printWin){
-    alert("Seu navegador bloqueou a janela de impressão. Permita pop-ups para este site e tente novamente.");
+
+  const PDF_W=794; /* A4 @96dpi */
+  const styleTag=`<style>
+    #pdf-capture-root *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
+    #pdf-capture-root{width:${PDF_W}px;background-color:#0a0804;background-image:url('${tmpl.img}');background-size:cover;background-position:center;padding:50px 42px;position:relative}
+    #pdf-capture-root .ov{position:absolute;inset:0;background:${tmpl.overlay}}
+    #pdf-capture-root .w{position:relative;z-index:1;color:#e2e8f0}
+    #pdf-capture-root .hd{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:18px;border-bottom:1px solid ${tmpl.accent}40;margin-bottom:24px}
+    #pdf-capture-root .company-name{font-size:26px;font-weight:900;color:${tmpl.accent}}
+    #pdf-capture-root .prop-label{font-size:10px;color:rgba(255,255,255,.3);text-align:right;margin-bottom:3px;text-transform:uppercase;letter-spacing:1px}
+    #pdf-capture-root .prop-date{font-size:11px;color:rgba(255,255,255,.25);text-align:right}
+    #pdf-capture-root .client-label{font-size:11px;color:rgba(255,255,255,.4);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+    #pdf-capture-root .client-name{font-size:20px;font-weight:800;color:#f1f5f9;margin-bottom:22px}
+    #pdf-capture-root .env-sec{background:rgba(0,0,0,.34);border-radius:12px;padding:18px;margin-bottom:14px;border:1px solid ${tmpl.accent}14}
+    #pdf-capture-root .env-title{font-size:14px;font-weight:800;color:${tmpl.accent};margin-bottom:12px}
+    #pdf-capture-root .row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:12px}
+    #pdf-capture-root .rl{color:#94a3b8}
+    #pdf-capture-root .rv{color:${tmpl.accent};font-weight:700}
+    #pdf-capture-root .ex{color:#c8a45e}
+    #pdf-capture-root .env-sub{display:flex;justify-content:space-between;margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,.1);font-size:13px;font-weight:700;color:rgba(255,255,255,.7)}
+    #pdf-capture-root .service-desc{background:${tmpl.accent}0d;border-left:2px solid ${tmpl.accent}66;border-radius:0 8px 8px 0;padding:10px 14px;margin-bottom:14px}
+    #pdf-capture-root .service-desc-title{font-size:9px;text-transform:uppercase;color:${tmpl.accent};letter-spacing:.8px;font-weight:700;margin-bottom:5px}
+    #pdf-capture-root .tt{background:${tmpl.accent}12;border:1px solid ${tmpl.accent}28;border-radius:14px;padding:24px;text-align:center;margin-top:8px}
+    #pdf-capture-root .tl{font-size:10px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+    #pdf-capture-root .tv{font-size:38px;font-weight:900;color:${tmpl.accent}}
+    #pdf-capture-root .st{border:3px solid rgba(200,200,200,.5);border-radius:50%;width:80px;height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:22px auto 0;color:rgba(200,200,200,.6);font-size:9px;font-weight:800;text-transform:uppercase;text-align:center;transform:rotate(-12deg)}
+    #pdf-capture-root .ft{text-align:center;margin-top:28px;font-size:10px;color:#334155}
+  </style>`;
+
+  const bodyHtml=`<div class="ov"></div><div class="w"><div class="hd"><div>${logoHtml}<div class="company-name">${u.companyName||"Proposta de Serviço"}</div></div><div><div class="prop-label">Proposta de Serviço</div><div class="prop-date">${new Date().toLocaleDateString("pt-BR")}</div></div></div><div class="client-label">Apresentada a</div><div class="client-name">${cl}</div>${envSections}<div class="tt"><div class="tl">Valor Total da Proposta</div><div class="tv">${fmt(totalGeral)}</div></div>${sh.stamp?`<div class="st">✓<br>APROVADO</div>`:""}<div class="ft">Proposta válida por 30 dias · ${u.companyName||""}</div></div>`;
+
+  /* Gera o PDF de verdade: renderiza a proposta fora da tela com html2canvas
+     e converte o resultado em PDF com jsPDF, baixando o arquivo .pdf diretamente.
+     Isso evita depender de pop-up ou do diálogo de impressão do navegador,
+     que falhavam em alguns celulares/apps e caíam de volta pra download de HTML. */
+  if(typeof html2canvas==="undefined"||!window.jspdf){
+    alert("Não foi possível carregar o gerador de PDF (sem conexão com a internet?). Verifique sua conexão e tente novamente.");
     return;
   }
-  printWin.document.open();
-  printWin.document.write(html);
-  printWin.document.close();
+
+  const originalLabel=triggerBtn?triggerBtn.innerHTML:null;
+  if(triggerBtn){triggerBtn.innerHTML="⏳ Gerando PDF...";triggerBtn.style.pointerEvents="none";triggerBtn.style.opacity="0.7";}
+
+  const styleEl=document.createElement("div");
+  styleEl.innerHTML=styleTag;
+  document.head.appendChild(styleEl.firstChild);
+  const captureRoot=document.createElement("div");
+  captureRoot.id="pdf-capture-root";
+  captureRoot.innerHTML=bodyHtml;
+  captureRoot.style.position="fixed";
+  captureRoot.style.left="-99999px";
+  captureRoot.style.top="0";
+  document.body.appendChild(captureRoot);
+
+  const cleanup=()=>{
+    document.body.removeChild(captureRoot);
+    document.head.removeChild(document.head.lastChild);
+    if(triggerBtn){triggerBtn.innerHTML=originalLabel;triggerBtn.style.pointerEvents="";triggerBtn.style.opacity="";}
+  };
+
+  /* espera as imagens (logo/fundo) carregarem antes de capturar */
+  const imgs=Array.from(captureRoot.querySelectorAll("img"));
+  const bgImg=new Image();bgImg.crossOrigin="anonymous";
+  const waits=imgs.map(img=>img.complete?Promise.resolve():new Promise(res=>{img.onload=res;img.onerror=res;}));
+  waits.push(new Promise(res=>{bgImg.onload=res;bgImg.onerror=res;bgImg.src=tmpl.img;}));
+
+  Promise.all(waits).then(()=>new Promise(r=>setTimeout(r,120))).then(()=>{
+    return html2canvas(captureRoot,{useCORS:true,allowTaint:false,backgroundColor:"#0a0804",scale:2,windowWidth:PDF_W});
+  }).then(canvas=>{
+    const {jsPDF}=window.jspdf;
+    const pageWmm=210,pageHmm=297; /* A4 */
+    const imgWmm=pageWmm;
+    const imgHmm=(canvas.height*imgWmm)/canvas.width;
+    const pdf=new jsPDF({unit:"mm",format:"a4"});
+    const imgData=canvas.toDataURL("image/jpeg",0.92);
+    if(imgHmm<=pageHmm){
+      pdf.addImage(imgData,"JPEG",0,0,imgWmm,imgHmm);
+    }else{
+      /* conteúdo maior que uma página A4: divide em várias páginas */
+      let heightLeftMm=imgHmm,positionMm=0,page=0;
+      while(heightLeftMm>0){
+        if(page>0)pdf.addPage();
+        pdf.addImage(imgData,"JPEG",0,positionMm,imgWmm,imgHmm);
+        heightLeftMm-=pageHmm;
+        positionMm-=pageHmm;
+        page++;
+      }
+    }
+    const fname=`Proposta_${(u.companyName||"proposta").replace(/[^a-zA-Z0-9]/g,"_")}_${cl.replace(/[^a-zA-Z0-9]/g,"_")}.pdf`;
+    pdf.save(fname);
+    cleanup();
+  }).catch(err=>{
+    console.error("Erro ao gerar PDF:",err);
+    alert("Não foi possível gerar o PDF. Tente novamente ou use uma imagem de fundo diferente.");
+    cleanup();
+  });
 }
 
 /* ════════════════════════════════════════════
