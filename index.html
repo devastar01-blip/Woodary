@@ -1362,13 +1362,33 @@ function buildPTab(){
     /* environments */
     selBudgets.forEach(b=>{
       const c=calcB(b);
-      const sec=div("");sec.style.cssText="background:rgba(0,0,0,.3);border-radius:8px;padding:12px;margin-bottom:10px";
-      sec.innerHTML=`<div style="font-size:12px;font-weight:800;color:${tmpl.accent};margin-bottom:6px">🏠 ${b.name}</div>`;
+      const sec=div("");sec.style.cssText="background:rgba(0,0,0,.28);border-radius:10px;padding:14px;margin-bottom:10px;border:1px solid rgba(255,255,255,.06)";
+      /* env title */
+      sec.innerHTML=`<div style="font-size:12px;font-weight:800;color:${tmpl.accent};margin-bottom:${b.serviceDescription?8:6}px;letter-spacing:.3px">🏠 ${b.name}</div>`;
+      /* service description — elegant block */
+      if(b.serviceDescription){
+        const descBlock=div("");descBlock.style.cssText=`background:${tmpl.accent}0d;border-left:2px solid ${tmpl.accent}66;border-radius:0 6px 6px 0;padding:8px 10px;margin-bottom:10px`;
+        descBlock.innerHTML=`<div style="font-size:9px;font-weight:700;color:${tmpl.accent};letter-spacing:.7px;text-transform:uppercase;margin-bottom:4px">Descrição do Serviço</div><div style="font-size:10px;color:rgba(255,255,255,.55);line-height:1.6">${b.serviceDescription}</div>`;
+        sec.appendChild(descBlock);
+      }
       if(STATE.pdfShow.materials){
         const mats=b.customMaterials||[];
-        mats.filter(m=>m.quantity>0).forEach(m=>{sec.innerHTML+=`<div style="display:flex;justify-content:space-between;font-size:10px;padding:2px 0;color:rgba(255,255,255,.4)"><span>${m.name}</span><span style="color:${tmpl.accent}">${fmt(m.quantity*m.unitPrice)}</span></div>`;});
+        mats.filter(m=>m.quantity>0).forEach(m=>{
+          const r=div("");r.style.cssText="display:flex;justify-content:space-between;font-size:10px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04)";
+          r.innerHTML=`<span style="color:rgba(255,255,255,.4)">${m.name}</span><span style="color:${tmpl.accent};font-weight:600">${fmt(m.quantity*m.unitPrice)}</span>`;
+          sec.appendChild(r);
+        });
       }
-      sec.innerHTML+=`<div style="display:flex;justify-content:space-between;margin-top:8px;padding-top:6px;border-top:1px solid rgba(255,255,255,.08)"><span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.6)">Subtotal</span><span style="font-size:14px;font-weight:800;color:${tmpl.accent}">${fmt(c.sale)}</span></div>`;
+      if(STATE.pdfShow.extras){
+        b.extras.forEach(e=>{
+          const r=div("");r.style.cssText="display:flex;justify-content:space-between;font-size:10px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04)";
+          r.innerHTML=`<span style="color:rgba(255,255,255,.35)">+ ${e.name}${e.description?` <em style="opacity:.6">— ${e.description}</em>`:""}</span><span style="color:#c8a45e;font-weight:600">${fmt(+e.value)}</span>`;
+          sec.appendChild(r);
+        });
+      }
+      const sub=div("");sub.style.cssText="display:flex;justify-content:space-between;margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,.1)";
+      sub.innerHTML=`<span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.55)">Subtotal</span><span style="font-size:14px;font-weight:800;color:${tmpl.accent}">${fmt(c.sale)}</span>`;
+      sec.appendChild(sub);
       pvI.appendChild(sec);
     });
     /* total */
@@ -1412,8 +1432,9 @@ function genProposal(selBudgets,tmplIn,u){
     return `<div class="env-sec"><div class="env-title">🏠 ${b.name}</div>${serviceDescHtml}${matRows}${exRows}${execRow}${delivRow}${costRow}${marginRow}${notesHtml}<div class="env-sub"><span>Subtotal do Ambiente</span><span style="color:${tmpl.accent}">${fmt(c.sale)}</span></div></div>`;
   }).join("");
   const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Proposta — ${u.companyName||"Marcenaria"}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',sans-serif;min-height:100vh;padding:50px 32px;background:#0a0804;background-image:url('${tmpl.img}');background-size:cover;background-position:center}body::before{content:'';position:fixed;inset:0;background:${tmpl.overlay};z-index:0;pointer-events:none}.w{max-width:740px;margin:0 auto;position:relative;z-index:1;color:#e2e8f0}.hd{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:18px;border-bottom:1px solid ${tmpl.accent}40;margin-bottom:24px}.company-name{font-size:26px;font-weight:900;color:${tmpl.accent}}.prop-label{font-size:10px;color:rgba(255,255,255,.3);text-align:right;margin-bottom:3px;text-transform:uppercase;letter-spacing:1px}.prop-date{font-size:11px;color:rgba(255,255,255,.25);text-align:right}.client-label{font-size:11px;color:rgba(255,255,255,.4);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}.client-name{font-size:20px;font-weight:800;color:#f1f5f9;margin-bottom:22px}.env-sec{background:rgba(0,0,0,.3);backdrop-filter:blur(4px);border-radius:12px;padding:18px;margin-bottom:14px;border:1px solid ${tmpl.accent}14}.env-title{font-size:14px;font-weight:800;color:${tmpl.accent};margin-bottom:12px}.row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px}.rl{color:#94a3b8}.rv{color:${tmpl.accent};font-weight:700}.ex{color:#c8a45e}.env-sub{display:flex;justify-content:space-between;margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,.1);font-size:13px;font-weight:700;color:rgba(255,255,255,.7)}
-.service-desc{background:rgba(255,255,255,.05);border-radius:7px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:rgba(255,255,255,.6);line-height:1.7;border:1px solid rgba(255,255,255,.08)}
-.service-desc-title{font-size:10px;text-transform:uppercase;color:${tmpl.accent};letter-spacing:.8px;font-weight:700;margin-bottom:5px}.tt{background:${tmpl.accent}12;border:1px solid ${tmpl.accent}28;border-radius:14px;padding:24px;text-align:center;margin-top:8px}.tl{font-size:10px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}.tv{font-size:38px;font-weight:900;color:${tmpl.accent}}.st{border:3px solid rgba(200,200,200,.5);border-radius:50%;width:80px;height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:22px auto 0;color:rgba(200,200,200,.6);font-size:9px;font-weight:800;text-transform:uppercase;text-align:center;transform:rotate(-12deg)}.ft{text-align:center;margin-top:28px;font-size:10px;color:#334155}</style></head><body><div class="w"><div class="hd"><div>${logoHtml}<div class="company-name">${u.companyName||"Proposta de Serviço"}</div></div><div><div class="prop-label">Proposta de Serviço</div><div class="prop-date">${new Date().toLocaleDateString("pt-BR")}</div></div></div><div class="client-label">Apresentada a</div><div class="client-name">${cl}</div>${envSections}<div class="tt"><div class="tl">Valor Total da Proposta</div><div class="tv">${fmt(totalGeral)}</div></div>${sh.stamp?`<div class="st">✓<br>APROVADO</div>`:""}<div class="ft">Proposta válida por 30 dias · ${u.companyName||""}</div></div></body></html>`;
+.service-desc{background:${tmpl.accent}0d;border-left:2px solid ${tmpl.accent}66;border-radius:0 8px 8px 0;padding:10px 14px;margin-bottom:14px}
+.service-desc-title{font-size:9px;text-transform:uppercase;color:${tmpl.accent};letter-spacing:.8px;font-weight:700;margin-bottom:5px}
+.service-desc-body{font-size:12px;color:rgba(255,255,255,.55);line-height:1.7}.tt{background:${tmpl.accent}12;border:1px solid ${tmpl.accent}28;border-radius:14px;padding:24px;text-align:center;margin-top:8px}.tl{font-size:10px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}.tv{font-size:38px;font-weight:900;color:${tmpl.accent}}.st{border:3px solid rgba(200,200,200,.5);border-radius:50%;width:80px;height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:22px auto 0;color:rgba(200,200,200,.6);font-size:9px;font-weight:800;text-transform:uppercase;text-align:center;transform:rotate(-12deg)}.ft{text-align:center;margin-top:28px;font-size:10px;color:#334155}</style></head><body><div class="w"><div class="hd"><div>${logoHtml}<div class="company-name">${u.companyName||"Proposta de Serviço"}</div></div><div><div class="prop-label">Proposta de Serviço</div><div class="prop-date">${new Date().toLocaleDateString("pt-BR")}</div></div></div><div class="client-label">Apresentada a</div><div class="client-name">${cl}</div>${envSections}<div class="tt"><div class="tl">Valor Total da Proposta</div><div class="tv">${fmt(totalGeral)}</div></div>${sh.stamp?`<div class="st">✓<br>APROVADO</div>`:""}<div class="ft">Proposta válida por 30 dias · ${u.companyName||""}</div></div></body></html>`;
   const blob=new Blob([html],{type:"text/html"});
   const url=URL.createObjectURL(blob);
   const a=document.createElement("a");
