@@ -432,8 +432,8 @@ async function hashPass(plain){
 /* ════════════════════════════════════════════
    SUPABASE CONFIG
 ════════════════════════════════════════════ */
-const SUPA_URL ="https://yysdbvkdttxufjnnpcim.supabase.co";
-const SUPA_KEY ="sb_publishable_K7xc1Jy6DhTAAxdAUeVfqQ_Uvs4vAsJ";
+const SUPA_URL ="https://maqsnuyyotiueagwvasg.supabase.co";
+const SUPA_KEY ="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1hcXNudXl5b3RpdWVhZ3d2YXNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3OTEyNDksImV4cCI6MjA5NDM2NzI0OX0.QdUlfvvy5_YVNI30as607zoD-eQWRM3vb-gGA6TBFVk";
 
 let supabase=null,SUPA_READY=false;
 try{
@@ -461,6 +461,10 @@ async function sbLoadUser(uid){
     const parsed=(budgets||[]).map(b=>({
       ...b,
       id:b.budget_key||b.id,
+      clientPhone:b.client_phone||"",
+      clientEmail:b.client_email||"",
+      deliveryDate:b.delivery_date||"",
+      serviceDescription:b.service_description||"",
       extras:           tryParse(b.extras,       []),
       customMaterials:  tryParse(b.custom_materials, null),
       materials:        tryParse(b.materials,    {}),
@@ -508,6 +512,7 @@ async function sbSaveBudget(uid,b){
     name:b.name,client:b.client,client_phone:b.clientPhone||"",client_email:b.clientEmail||"",
     date:b.date,delivery_date:b.deliveryDate||null,status:b.status,margin:b.margin||35,
     difficulty:b.difficulty||"easy",notes:b.notes||"",
+    service_description:b.serviceDescription||"",
     extras:JSON.stringify(b.extras||[]),
     custom_materials:JSON.stringify(b.customMaterials||[]),
     materials:JSON.stringify(b.materials||{}),
@@ -955,21 +960,43 @@ function buildBForm(initial){
   const exList=div("");c1.appendChild(exList);
   const renderEx=()=>{
     exList.innerHTML="";
-    extras.forEach(e=>{
-      const er=div("");er.style.cssText="display:flex;justify-content:space-between;align-items:center;padding:7px 11px;background:var(--bg-hover);border-radius:8px;margin-bottom:5px;border:1px solid var(--border)";
-      er.innerHTML=`<span style="color:var(--text);font-size:13px">${e.name}</span><div style="display:flex;gap:9px;align-items:center"><span style="color:#b45309;font-weight:700">${fmt(+e.value)}</span></div>`;
-      er.querySelector("div").appendChild(btn("✕","btn-danger",()=>{extras=extras.filter(x=>x.id!==e.id);renderEx();},{padding:"2px 9px",fontSize:"11px",borderRadius:"7px"}));
+    extras.forEach((e,ei)=>{
+      const er=div("");er.style.cssText="background:var(--bg-hover);border-radius:8px;margin-bottom:6px;border:1px solid var(--border);overflow:hidden";
+      /* top row: name + value + delete */
+      const topRow=div("");topRow.style.cssText="display:flex;justify-content:space-between;align-items:center;padding:7px 11px;gap:8px";
+      topRow.innerHTML=`<span style="color:var(--text);font-size:13px;flex:1">${e.name}</span><span style="color:#b45309;font-weight:700;flex-shrink:0">${fmt(+e.value)}</span>`;
+      topRow.appendChild(btn("✕","btn-danger",()=>{extras=extras.filter(x=>x.id!==e.id);renderEx();upS();},{padding:"2px 9px",fontSize:"11px",borderRadius:"7px"}));
+      er.appendChild(topRow);
+      /* description row */
+      if(e.description){
+        const descEl=div("");descEl.style.cssText="padding:0 11px 8px;font-size:11px;color:var(--text-muted);line-height:1.5;border-top:1px solid var(--border)";descEl.style.paddingTop="6px";descEl.textContent=e.description;
+        er.appendChild(descEl);
+      }
       exList.appendChild(er);
     });
   };renderEx();
-  const exR=div("");exR.style.cssText="display:flex;gap:8px;margin-bottom:9px;align-items:flex-start";
+  /* Add extra form */
+  const exR=div("");exR.style.cssText="margin-bottom:9px";
+  const exRow1=div("");exRow1.style.cssText="display:flex;gap:8px;margin-bottom:6px;align-items:flex-start";
   const enI=el("input","");enI.placeholder="Ex: Transporte, Alimentação";enI.style.flex="2";
   const evI=el("input","");evI.type="number";evI.placeholder="R$ Valor";evI.style.flex="1";
-  exR.appendChild(enI);exR.appendChild(evI);
-  exR.appendChild(btn("+ Add","btn-outline",()=>{if(!enI.value||!evI.value)return;extras.push({id:uid(),name:enI.value,value:+evI.value});enI.value="";evI.value="";renderEx();},{whiteSpace:"nowrap",padding:"9px 14px",borderRadius:"10px",flexShrink:"0"}));
+  exRow1.appendChild(enI);exRow1.appendChild(evI);
+  const exDescI=el("input","");exDescI.placeholder="Descrição do gasto (opcional) — aparece no PDF";exDescI.style.marginBottom="0";
+  const addExBtn=btn("+ Add","btn-outline",()=>{
+    if(!enI.value||!evI.value)return;
+    extras.push({id:uid(),name:enI.value,value:+evI.value,description:exDescI.value.trim()});
+    enI.value="";evI.value="";exDescI.value="";
+    renderEx();upS();
+  },{whiteSpace:"nowrap",padding:"9px 14px",borderRadius:"10px",flexShrink:"0"});
+  exRow1.appendChild(addExBtn);
+  exR.appendChild(exRow1);
+  exR.appendChild(exDescI);
   c1.appendChild(exR);
-  const nl=div("");nl.style.marginTop="14px";nl.appendChild(lbl("Observações"));
-  const nota=el("textarea","");nota.style.cssText="min-height:60px;resize:vertical";nota.placeholder="Detalhes, especificações...";nota.value=isE?initial.notes:"";F.notes=nota;nl.appendChild(nota);c1.appendChild(nl);
+  const nl=div("");nl.style.marginTop="14px";
+  nl.appendChild(lbl("Descrição do Serviço (aparece no PDF)"));
+  const descArea=el("textarea","");descArea.style.cssText="min-height:70px;resize:vertical;margin-bottom:10px";descArea.placeholder="Descreva detalhadamente o serviço: materiais utilizados, acabamentos, dimensões, características especiais...";descArea.value=isE?(initial.serviceDescription||initial.notes||""):"";F.serviceDescription=descArea;nl.appendChild(descArea);
+  nl.appendChild(lbl("Observações Internas (não aparece no PDF)"));
+  const nota=el("textarea","");nota.style.cssText="min-height:50px;resize:vertical";nota.placeholder="Anotações internas, lembretes...";nota.value=isE?initial.notes:"";F.notes=nota;nl.appendChild(nota);c1.appendChild(nl);
   wrap.appendChild(c1);
   const sum=div("card");sum.style.cssText="padding:16px;margin-bottom:12px";
   const sg=div("grid-4 sum-grid");
@@ -1004,7 +1031,7 @@ function buildBForm(initial){
   ar.appendChild(btn("Cancelar","btn-ghost",()=>setState({view:"list",selBudget:null}),{borderRadius:"10px",padding:"9px 18px"}));
   ar.appendChild(btn("💾 Salvar Orçamento","btn-primary",()=>{
     if(!F.name.value||!F.client.value){alert("Preencha nome do projeto e cliente.");return;}
-    const bd={id:isE?initial.id:uid(),name:F.name.value,client:F.client.value,clientPhone:F.clientPhone.value,clientEmail:F.clientEmail.value,date:F.date.value,deliveryDate:F.deliveryDate.value,status:F.status.value,margin:+F.margin.value||35,difficulty:F.difficulty.value||"easy",notes:F.notes.value,extras:JSON.parse(JSON.stringify(extras)),customMaterials:JSON.parse(JSON.stringify(customMats)),materials:{}};
+    const bd={id:isE?initial.id:uid(),name:F.name.value,client:F.client.value,clientPhone:F.clientPhone.value,clientEmail:F.clientEmail.value,date:F.date.value,deliveryDate:F.deliveryDate.value,status:F.status.value,margin:+F.margin.value||35,difficulty:F.difficulty.value||"easy",notes:F.notes.value,serviceDescription:F.serviceDescription.value,extras:JSON.parse(JSON.stringify(extras)),customMaterials:JSON.parse(JSON.stringify(customMats)),materials:{}};
     const u=STATE.cur;
     if(isE){
       u.budgets=u.budgets.map(b=>b.id===bd.id?bd:b);
@@ -1375,15 +1402,18 @@ function genProposal(selBudgets,tmplIn,u){
     const c=calcB(b);
     const mats=b.customMaterials||[];
     const matRows=sh.materials?mats.filter(m=>m.quantity>0).map(m=>`<div class="row"><span class="rl">${m.name} — ${m.quantity} ${m.unit||""} × ${fmt(m.unitPrice)}</span><span class="rv">${fmt(m.quantity*m.unitPrice)}</span></div>`).join(""):"";
-    const exRows=sh.extras?b.extras.map(e=>`<div class="row"><span class="rl">+ ${e.name}</span><span class="rv ex">${fmt(+e.value)}</span></div>`).join(""):"";
+    const exRows=sh.extras?b.extras.map(e=>`<div class="row"><span class="rl">+ ${e.name}${e.description?` <span style="font-style:italic;opacity:.7">— ${e.description}</span>`:""}</span><span class="rv ex">${fmt(+e.value)}</span></div>`).join(""):"";
     const execRow=c.execCost>0?`<div class="row"><span class="rl">⚙️ Execução</span><span class="rv" style="color:#9c6fe4">${fmt(c.execCost)}</span></div>`:"";
     const costRow=sh.cost?`<div class="row"><span class="rl">Custo Total</span><span class="rv">${fmt(c.cost)}</span></div>`:"";
     const marginRow=sh.margin?`<div class="row"><span class="rl">Margem de Lucro</span><span class="rv">${b.margin}%</span></div>`:"";
-    const notesHtml=sh.notes&&b.notes?`<div style="font-size:11px;color:#94a3b8;margin-top:6px;line-height:1.6;font-style:italic">${b.notes}</div>`:"";
     const delivRow=sh.delivery&&b.deliveryDate?`<div class="row"><span class="rl">Previsão de Entrega</span><span class="rv">${fmtd(b.deliveryDate)}</span></div>`:"";
-    return `<div class="env-sec"><div class="env-title">🏠 ${b.name}</div>${matRows}${exRows}${execRow}${delivRow}${costRow}${marginRow}${notesHtml}<div class="env-sub"><span>Subtotal do Ambiente</span><span style="color:${tmpl.accent}">${fmt(c.sale)}</span></div></div>`;
+    const serviceDescHtml=b.serviceDescription?`<div class="service-desc"><div class="service-desc-title">📋 Descrição do Serviço</div>${b.serviceDescription}</div>`:"";
+    const notesHtml=sh.notes&&b.notes?`<div style="font-size:11px;color:#94a3b8;margin-top:6px;line-height:1.6;font-style:italic">${b.notes}</div>`:"";
+    return `<div class="env-sec"><div class="env-title">🏠 ${b.name}</div>${serviceDescHtml}${matRows}${exRows}${execRow}${delivRow}${costRow}${marginRow}${notesHtml}<div class="env-sub"><span>Subtotal do Ambiente</span><span style="color:${tmpl.accent}">${fmt(c.sale)}</span></div></div>`;
   }).join("");
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Proposta — ${u.companyName||"Marcenaria"}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',sans-serif;min-height:100vh;padding:50px 32px;background:#0a0804;background-image:url('${tmpl.img}');background-size:cover;background-position:center}body::before{content:'';position:fixed;inset:0;background:${tmpl.overlay};z-index:0;pointer-events:none}.w{max-width:740px;margin:0 auto;position:relative;z-index:1;color:#e2e8f0}.hd{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:18px;border-bottom:1px solid ${tmpl.accent}40;margin-bottom:24px}.company-name{font-size:26px;font-weight:900;color:${tmpl.accent}}.prop-label{font-size:10px;color:rgba(255,255,255,.3);text-align:right;margin-bottom:3px;text-transform:uppercase;letter-spacing:1px}.prop-date{font-size:11px;color:rgba(255,255,255,.25);text-align:right}.client-label{font-size:11px;color:rgba(255,255,255,.4);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}.client-name{font-size:20px;font-weight:800;color:#f1f5f9;margin-bottom:22px}.env-sec{background:rgba(0,0,0,.3);backdrop-filter:blur(4px);border-radius:12px;padding:18px;margin-bottom:14px;border:1px solid ${tmpl.accent}14}.env-title{font-size:14px;font-weight:800;color:${tmpl.accent};margin-bottom:12px}.row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px}.rl{color:#94a3b8}.rv{color:${tmpl.accent};font-weight:700}.ex{color:#c8a45e}.env-sub{display:flex;justify-content:space-between;margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,.1);font-size:13px;font-weight:700;color:rgba(255,255,255,.7)}.tt{background:${tmpl.accent}12;border:1px solid ${tmpl.accent}28;border-radius:14px;padding:24px;text-align:center;margin-top:8px}.tl{font-size:10px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}.tv{font-size:38px;font-weight:900;color:${tmpl.accent}}.st{border:3px solid rgba(200,200,200,.5);border-radius:50%;width:80px;height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:22px auto 0;color:rgba(200,200,200,.6);font-size:9px;font-weight:800;text-transform:uppercase;text-align:center;transform:rotate(-12deg)}.ft{text-align:center;margin-top:28px;font-size:10px;color:#334155}</style></head><body><div class="w"><div class="hd"><div>${logoHtml}<div class="company-name">${u.companyName||"Proposta de Serviço"}</div></div><div><div class="prop-label">Proposta de Serviço</div><div class="prop-date">${new Date().toLocaleDateString("pt-BR")}</div></div></div><div class="client-label">Apresentada a</div><div class="client-name">${cl}</div>${envSections}<div class="tt"><div class="tl">Valor Total da Proposta</div><div class="tv">${fmt(totalGeral)}</div></div>${sh.stamp?`<div class="st">✓<br>APROVADO</div>`:""}<div class="ft">Proposta válida por 30 dias · ${u.companyName||""}</div></div></body></html>`;
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Proposta — ${u.companyName||"Marcenaria"}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',sans-serif;min-height:100vh;padding:50px 32px;background:#0a0804;background-image:url('${tmpl.img}');background-size:cover;background-position:center}body::before{content:'';position:fixed;inset:0;background:${tmpl.overlay};z-index:0;pointer-events:none}.w{max-width:740px;margin:0 auto;position:relative;z-index:1;color:#e2e8f0}.hd{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:18px;border-bottom:1px solid ${tmpl.accent}40;margin-bottom:24px}.company-name{font-size:26px;font-weight:900;color:${tmpl.accent}}.prop-label{font-size:10px;color:rgba(255,255,255,.3);text-align:right;margin-bottom:3px;text-transform:uppercase;letter-spacing:1px}.prop-date{font-size:11px;color:rgba(255,255,255,.25);text-align:right}.client-label{font-size:11px;color:rgba(255,255,255,.4);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}.client-name{font-size:20px;font-weight:800;color:#f1f5f9;margin-bottom:22px}.env-sec{background:rgba(0,0,0,.3);backdrop-filter:blur(4px);border-radius:12px;padding:18px;margin-bottom:14px;border:1px solid ${tmpl.accent}14}.env-title{font-size:14px;font-weight:800;color:${tmpl.accent};margin-bottom:12px}.row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px}.rl{color:#94a3b8}.rv{color:${tmpl.accent};font-weight:700}.ex{color:#c8a45e}.env-sub{display:flex;justify-content:space-between;margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,.1);font-size:13px;font-weight:700;color:rgba(255,255,255,.7)}
+.service-desc{background:rgba(255,255,255,.05);border-radius:7px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:rgba(255,255,255,.6);line-height:1.7;border:1px solid rgba(255,255,255,.08)}
+.service-desc-title{font-size:10px;text-transform:uppercase;color:${tmpl.accent};letter-spacing:.8px;font-weight:700;margin-bottom:5px}.tt{background:${tmpl.accent}12;border:1px solid ${tmpl.accent}28;border-radius:14px;padding:24px;text-align:center;margin-top:8px}.tl{font-size:10px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}.tv{font-size:38px;font-weight:900;color:${tmpl.accent}}.st{border:3px solid rgba(200,200,200,.5);border-radius:50%;width:80px;height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:22px auto 0;color:rgba(200,200,200,.6);font-size:9px;font-weight:800;text-transform:uppercase;text-align:center;transform:rotate(-12deg)}.ft{text-align:center;margin-top:28px;font-size:10px;color:#334155}</style></head><body><div class="w"><div class="hd"><div>${logoHtml}<div class="company-name">${u.companyName||"Proposta de Serviço"}</div></div><div><div class="prop-label">Proposta de Serviço</div><div class="prop-date">${new Date().toLocaleDateString("pt-BR")}</div></div></div><div class="client-label">Apresentada a</div><div class="client-name">${cl}</div>${envSections}<div class="tt"><div class="tl">Valor Total da Proposta</div><div class="tv">${fmt(totalGeral)}</div></div>${sh.stamp?`<div class="st">✓<br>APROVADO</div>`:""}<div class="ft">Proposta válida por 30 dias · ${u.companyName||""}</div></div></body></html>`;
   const blob=new Blob([html],{type:"text/html"});
   const url=URL.createObjectURL(blob);
   const a=document.createElement("a");
