@@ -1436,9 +1436,10 @@ function genProposal(selBudgets,tmplIn,u,triggerBtn){
   }).join("");
 
   const PDF_W=794; /* A4 @96dpi */
+  const PDF_H=1123; /* altura de uma página A4 @96dpi, usada como altura mínima do fundo */
   const styleTag=`<style>
     #pdf-capture-root *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
-    #pdf-capture-root{width:${PDF_W}px;background-color:#0a0804;background-image:url('${tmpl.img}');background-size:cover;background-position:center;padding:50px 42px;position:relative}
+    #pdf-capture-root{width:${PDF_W}px;min-height:${PDF_H}px;background-color:#0a0804;background-image:url('${tmpl.img}');background-size:cover;background-position:center;padding:50px 42px;position:relative}
     #pdf-capture-root .ov{position:absolute;inset:0;background:${tmpl.overlay}}
     #pdf-capture-root .w{position:relative;z-index:1;color:#e2e8f0}
     #pdf-capture-root .hd{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:18px;border-bottom:1px solid ${tmpl.accent}40;margin-bottom:24px}
